@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: news-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: news_scraper
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  migrate:
+    build: .
+    container_name: news-migrate
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/news_scraper
+    command: ["npm", "run", "db:migrate"]
+    restart: "no"
+
+  api:
+    build: .
+    container_name: news-api
+    depends_on:
+      - postgres
+      - migrate
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/news_scraper
+      CORS_ORIGIN: "*"
+      REQUEST_TIMEOUT_MS: 15000
+      USER_AGENT: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  worker:
+    build: .
+    container_name: news-worker
+    depends_on:
+      - postgres
+      - migrate
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/news_scraper
+      CRON_ENABLED: "true"
+      CRON_EXPRESSION: "*/30 * * * *"
+      REQUEST_TIMEOUT_MS: 15000
+      USER_AGENT: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+    command: ["npm", "run", "worker:cron"]
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
