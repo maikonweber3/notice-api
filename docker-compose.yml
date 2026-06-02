@@ -1,8 +1,12 @@
+# Desenvolvimento local com Postgres dedicado.
+# Na VPS, prefira PM2 + Postgres existente (ver ecosystem.config.cjs e .env.example).
 services:
   postgres:
     image: postgres:16
     container_name: news-postgres
     restart: unless-stopped
+    profiles:
+      - local-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -10,11 +14,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5435:5432"
 
   migrate:
     build: .
     container_name: news-migrate
+    profiles:
+      - local-db
     depends_on:
       - postgres
     environment:
@@ -25,6 +31,8 @@ services:
   api:
     build: .
     container_name: news-api
+    profiles:
+      - local-db
     depends_on:
       - postgres
       - migrate
@@ -41,6 +49,8 @@ services:
   worker:
     build: .
     container_name: news-worker
+    profiles:
+      - local-db
     depends_on:
       - postgres
       - migrate

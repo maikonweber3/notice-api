@@ -1,5 +1,6 @@
 import { XMLParser } from "fast-xml-parser";
 import { httpClient } from "../httpClient.js";
+import { toPlainTextOrNull } from "../utils/plainText.js";
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -39,7 +40,7 @@ export async function scrapeRss(feedUrl) {
     source: feedUrl,
     title: pickText(item?.title),
     link: pickText(item?.link),
-    summary: pickText(item?.description),
+    summary: toPlainTextOrNull(pickText(item?.description), { maxLength: 500 }),
     publishedAt: toIsoDate(item?.pubDate),
     collectedAt: now,
   }));
@@ -52,7 +53,10 @@ export async function scrapeRss(feedUrl) {
       source: feedUrl,
       title: pickText(entry?.title),
       link: pickText(firstHref),
-      summary: pickText(entry?.summary) || pickText(entry?.content),
+      summary: toPlainTextOrNull(
+        pickText(entry?.summary) || pickText(entry?.content),
+        { maxLength: 500 }
+      ),
       publishedAt: toIsoDate(entry?.updated) || toIsoDate(entry?.published),
       collectedAt: now,
     };

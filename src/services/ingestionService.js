@@ -4,6 +4,7 @@ import { computeArticleHash } from "../utils/hash.js";
 import { insertArticles } from "../repositories/articlesRepository.js";
 import { listSources, upsertSources } from "../repositories/sourcesRepository.js";
 import { defaultSources } from "../sources/catalog.js";
+import { toPlainTextOrNull } from "../utils/plainText.js";
 
 export async function ensureDefaultSources() {
   await upsertSources(defaultSources);
@@ -33,7 +34,7 @@ export async function runIngestion({ category } = {}) {
         category: source.category,
         title: item.title,
         url: item.link || null,
-        summary: item.summary || null,
+        summary: toPlainTextOrNull(item.summary, { maxLength: 500 }),
         publishedAt: item.publishedAt || null,
         collectedAt: item.collectedAt,
         contentHash: computeArticleHash({

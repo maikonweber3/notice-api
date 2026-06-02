@@ -1,4 +1,13 @@
 import { pool } from "../db/pool.js";
+import { toPlainTextOrNull } from "../utils/plainText.js";
+
+function sanitizeArticle(row) {
+  if (!row) return row;
+  return {
+    ...row,
+    summary: toPlainTextOrNull(row.summary, { maxLength: 500 }),
+  };
+}
 
 export async function insertArticles(articles) {
   if (articles.length === 0) {
@@ -103,7 +112,10 @@ export async function findArticles(filters) {
     pool.query(`SELECT COUNT(*)::int AS total FROM articles ${where}`, params.slice(0, -2)),
   ]);
 
-  return { items: rowsResult.rows, total: countResult.rows[0]?.total || 0 };
+  return {
+    items: rowsResult.rows.map(sanitizeArticle),
+    total: countResult.rows[0]?.total || 0,
+  };
 }
 
 export async function getArticleById(id) {
@@ -125,7 +137,7 @@ export async function getArticleById(id) {
   `,
     [id]
   );
-  return result.rows[0] || null;
+  return sanitizeArticle(result.rows[0] || null);
 }
 
 export async function getStats() {
