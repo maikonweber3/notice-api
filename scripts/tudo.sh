@@ -16,6 +16,12 @@ npm run scrape -- \
   --rss "https://www.freecodecamp.org/news/rss/" \
   --rss "https://www.smashingmagazine.com/feed/" \
   --rss "https://hnrss.org/frontpage" \
+  --rss "https://ge.globo.com/rss/ge/" \
+  --rss "https://www.terra.com.br/esportes/rss.xml" \
+  --rss "https://www.metropoles.com/esportes/feed/" \
+  --rss "https://gshow.globo.com/rss/gshow/" \
+  --rss "https://www.metropoles.com/entretenimento/feed/" \
+  --rss "https://www.terra.com.br/diversao/rss.xml" \
   --out "$OUT_FILE"
 
 echo "Extracao completa concluida: $OUT_FILE"

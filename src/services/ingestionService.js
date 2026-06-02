@@ -5,6 +5,7 @@ import { insertArticles } from "../repositories/articlesRepository.js";
 import { listSources, upsertSources } from "../repositories/sourcesRepository.js";
 import { defaultSources } from "../sources/catalog.js";
 import { toPlainTextOrNull } from "../utils/plainText.js";
+import { runArticleCleanup } from "./cleanupService.js";
 
 export async function ensureDefaultSources() {
   await upsertSources(defaultSources);
@@ -54,10 +55,14 @@ export async function runIngestion({ category } = {}) {
     }
   }
 
-  return {
+  const ingestion = {
     processedSources,
     collected,
     inserted,
     failures,
   };
+
+  const cleanup = await runArticleCleanup();
+
+  return { ...ingestion, cleanup };
 }

@@ -28,6 +28,9 @@ cp .env.example .env
 - `CORS_ORIGIN`: origem permitida para frontend
 - `CRON_ENABLED`: habilita worker cron (`true/false`)
 - `CRON_EXPRESSION`: expressao cron (padrao `*/30 * * * *`)
+- `ARTICLES_CLEANUP_ENABLED`: habilita limpeza automatica (`true/false`)
+- `ARTICLES_MAX_PER_CATEGORY`: maximo de artigos por categoria (padrao `200`)
+- `ARTICLES_MAX_AGE_DAYS`: remove artigos mais antigos que N dias (padrao `14`, use `0` para desativar)
 
 ## Banco de dados
 
@@ -55,10 +58,13 @@ Swagger UI:
 Endpoints principais:
 - `GET /health`
 - `GET /sources?category=tecnologia&active=true`
+- `GET /articles?category=esportes&page=1&limit=20`
+- `GET /articles?category=entretenimento&page=1&limit=20`
 - `GET /articles?category=investimentos&q=bitcoin&page=1&limit=20`
 - `GET /articles/:id`
 - `GET /stats`
-- `POST /ingestion/run` (executa coleta manual e persiste no banco)
+- `POST /ingestion/run` (coleta manual; ao final executa limpeza de retencao)
+- `POST /cleanup/run` (limpeza manual sem nova coleta)
 
 Exemplo de ingestao manual:
 
@@ -82,6 +88,8 @@ Mantidos para coleta rapida em arquivo:
 - `./scripts/investimentos.sh [arquivo_saida]`
 - `./scripts/tecnologia.sh [arquivo_saida]`
 - `./scripts/programacao.sh [arquivo_saida]`
+- `./scripts/esportes.sh [arquivo_saida]`
+- `./scripts/entretenimento.sh [arquivo_saida]`
 - `./scripts/tudo.sh [arquivo_saida]`
 - `./scripts/extrair.sh <tema> [arquivo_saida]`
 
@@ -91,6 +99,23 @@ Exemplos:
 bash ./scripts/extrair.sh investimentos
 bash ./scripts/extrair.sh tecnologia ./data/minha-coleta.jsonl
 ```
+
+## Retencao e limpeza
+
+Para manter o banco pequeno e acelerar as queries, a API remove automaticamente:
+
+1. Artigos com mais de `ARTICLES_MAX_AGE_DAYS` dias
+2. Excesso acima de `ARTICLES_MAX_PER_CATEGORY` por categoria (mantém os mais recentes)
+
+A limpeza roda após cada ingestão (cron e `POST /ingestion/run`). Para executar só a limpeza:
+
+```bash
+npm run db:cleanup
+# ou
+curl -X POST http://localhost:3000/cleanup/run
+```
+
+`GET /stats` retorna `total`, contagens por categoria e os limites configurados em `retention`.
 
 ## Integracao facilitada
 

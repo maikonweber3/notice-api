@@ -15,12 +15,18 @@ case "$TEMA" in
   programacao)
     ./scripts/programacao.sh "${OUT_FILE:-./data/programacao.jsonl}"
     ;;
+  esportes)
+    ./scripts/esportes.sh "${OUT_FILE:-./data/esportes.jsonl}"
+    ;;
+  entretenimento)
+    ./scripts/entretenimento.sh "${OUT_FILE:-./data/entretenimento.jsonl}"
+    ;;
   tudo)
     ./scripts/tudo.sh "${OUT_FILE:-./data/noticias-tudo.jsonl}"
     ;;
   *)
     echo "Tema invalido: $TEMA"
-    echo "Uso: ./scripts/extrair.sh [investimentos|tecnologia|programacao|tudo] [arquivo_saida]"
+    echo "Uso: ./scripts/extrair.sh [investimentos|tecnologia|programacao|esportes|entretenimento|tudo] [arquivo_saida]"
     exit 1
     ;;
 esac

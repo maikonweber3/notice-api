@@ -53,4 +53,40 @@ export const defaultSources = [
     sourceType: "rss",
     sourceUrl: "https://hnrss.org/frontpage",
   },
+  {
+    name: "Globo Esporte",
+    category: "esportes",
+    sourceType: "rss",
+    sourceUrl: "https://ge.globo.com/rss/ge/",
+  },
+  {
+    name: "Terra Esportes",
+    category: "esportes",
+    sourceType: "rss",
+    sourceUrl: "https://www.terra.com.br/esportes/rss.xml",
+  },
+  {
+    name: "Metrópoles Esportes",
+    category: "esportes",
+    sourceType: "rss",
+    sourceUrl: "https://www.metropoles.com/esportes/feed/",
+  },
+  {
+    name: "Gshow",
+    category: "entretenimento",
+    sourceType: "rss",
+    sourceUrl: "https://gshow.globo.com/rss/gshow/",
+  },
+  {
+    name: "Metrópoles Entretenimento",
+    category: "entretenimento",
+    sourceType: "rss",
+    sourceUrl: "https://www.metropoles.com/entretenimento/feed/",
+  },
+  {
+    name: "Terra Diversão",
+    category: "entretenimento",
+    sourceType: "rss",
+    sourceUrl: "https://www.terra.com.br/diversao/rss.xml",
+  },
 ];

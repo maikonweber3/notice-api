@@ -12,4 +12,7 @@ export const config = {
   corsOrigin: process.env.CORS_ORIGIN || "*",
   cronEnabled: String(process.env.CRON_ENABLED || "true").toLowerCase() === "true",
   cronExpression: process.env.CRON_EXPRESSION || "*/30 * * * *",
+  cleanupEnabled: String(process.env.ARTICLES_CLEANUP_ENABLED || "true").toLowerCase() === "true",
+  articlesMaxPerCategory: Math.max(Number(process.env.ARTICLES_MAX_PER_CATEGORY || 200), 0),
+  articlesMaxAgeDays: Math.max(Number(process.env.ARTICLES_MAX_AGE_DAYS || 14), 0),
 };

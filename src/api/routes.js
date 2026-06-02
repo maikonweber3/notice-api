@@ -4,7 +4,10 @@ import {
   getStats,
 } from "../repositories/articlesRepository.js";
 import { listSources } from "../repositories/sourcesRepository.js";
+import { config } from "../config.js";
 import { ensureDefaultSources, runIngestion } from "../services/ingestionService.js";
+import { runArticleCleanup } from "../services/cleanupService.js";
+import { countArticles } from "../repositories/articlesRepository.js";
 
 function parsePagination(query) {
   const page = Math.max(Number(query.page || 1), 1);
@@ -109,7 +112,39 @@ export async function registerRoutes(app) {
     schema: {
       tags: ["Stats"],
     },
-  }, async () => getStats());
+  }, async () => {
+    const stats = await getStats();
+    return {
+      ...stats,
+      retention: {
+        cleanupEnabled: config.cleanupEnabled,
+        maxPerCategory: config.articlesMaxPerCategory,
+        maxAgeDays: config.articlesMaxAgeDays,
+      },
+    };
+  });
+
+  app.post("/cleanup/run", {
+    schema: {
+      tags: ["Cleanup"],
+      body: {
+        type: "object",
+        properties: {
+          maxPerCategory: { type: "number", minimum: 0 },
+          maxAgeDays: { type: "number", minimum: 0 },
+        },
+      },
+    },
+  }, async (request) => {
+    const before = await countArticles();
+    const cleanup = await runArticleCleanup({
+      force: true,
+      maxPerCategory: request.body?.maxPerCategory,
+      maxAgeDays: request.body?.maxAgeDays,
+    });
+    const after = await countArticles();
+    return { before, after, cleanup };
+  });
 
   app.post("/ingestion/run", {
     schema: {

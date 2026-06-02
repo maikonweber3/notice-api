@@ -1,12 +1,14 @@
 import cron from "node-cron";
 import { config } from "../config.js";
 import { ensureDefaultSources, runIngestion } from "../services/ingestionService.js";
+import { countArticles } from "../repositories/articlesRepository.js";
 import { pool } from "../db/pool.js";
 
 async function runOnce() {
   await ensureDefaultSources();
   const result = await runIngestion();
-  console.log(`[CRON] Concluido: ${JSON.stringify(result)}`);
+  const total = await countArticles();
+  console.log(`[CRON] Concluido: ${JSON.stringify(result)} | artigos no banco: ${total}`);
 }
 
 async function start() {

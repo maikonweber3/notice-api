@@ -140,8 +140,59 @@ export async function getArticleById(id) {
   return sanitizeArticle(result.rows[0] || null);
 }
 
+export async function pruneArticles({ maxPerCategory = 0, maxAgeDays = 0 } = {}) {
+  let deletedByAge = 0;
+  let deletedByCount = 0;
+
+  if (maxAgeDays > 0) {
+    const ageResult = await pool.query(
+      `
+      DELETE FROM articles
+      WHERE COALESCE(published_at, collected_at) < NOW() - ($1::text || ' days')::interval
+    `,
+      [maxAgeDays]
+    );
+    deletedByAge = ageResult.rowCount;
+  }
+
+  if (maxPerCategory > 0) {
+    const countResult = await pool.query(
+      `
+      DELETE FROM articles a
+      USING (
+        SELECT id
+        FROM (
+          SELECT
+            id,
+            ROW_NUMBER() OVER (
+              PARTITION BY category
+              ORDER BY COALESCE(published_at, collected_at) DESC, id DESC
+            ) AS rn
+          FROM articles
+        ) ranked
+        WHERE rn > $1
+      ) excess
+      WHERE a.id = excess.id
+    `,
+      [maxPerCategory]
+    );
+    deletedByCount = countResult.rowCount;
+  }
+
+  return {
+    deleted: deletedByAge + deletedByCount,
+    deletedByAge,
+    deletedByCount,
+  };
+}
+
+export async function countArticles() {
+  const result = await pool.query(`SELECT COUNT(*)::int AS total FROM articles`);
+  return result.rows[0]?.total || 0;
+}
+
 export async function getStats() {
-  const [byCategory, bySource] = await Promise.all([
+  const [byCategory, bySource, totalResult] = await Promise.all([
     pool.query(`
       SELECT category, COUNT(*)::int AS count
       FROM articles
@@ -155,9 +206,11 @@ export async function getStats() {
       ORDER BY count DESC
       LIMIT 20
     `),
+    pool.query(`SELECT COUNT(*)::int AS total FROM articles`),
   ]);
 
   return {
+    total: totalResult.rows[0]?.total || 0,
     byCategory: byCategory.rows,
     bySource: bySource.rows,
   };
