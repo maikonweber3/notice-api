@@ -8,6 +8,15 @@ import { config } from "../config.js";
 import { ensureDefaultSources, runIngestion } from "../services/ingestionService.js";
 import { runArticleCleanup } from "../services/cleanupService.js";
 import { countArticles } from "../repositories/articlesRepository.js";
+import {
+  findBanners,
+  getBannerById,
+  getFeaturedBanners,
+  getSyncStats,
+} from "../repositories/shopeeOffersRepository.js";
+import { runShopeeSync } from "../services/shopeeSyncService.js";
+import { runArticleEnrichment } from "../services/articleEnrichmentService.js";
+import { requireRunnerToken } from "./runnerAuth.js";
 
 function parsePagination(query) {
   const page = Math.max(Number(query.page || 1), 1);
@@ -125,8 +134,10 @@ export async function registerRoutes(app) {
   });
 
   app.post("/cleanup/run", {
+    preHandler: requireRunnerToken,
     schema: {
       tags: ["Cleanup"],
+      security: [{ runnerToken: [] }],
       body: {
         type: "object",
         properties: {
@@ -147,8 +158,10 @@ export async function registerRoutes(app) {
   });
 
   app.post("/ingestion/run", {
+    preHandler: requireRunnerToken,
     schema: {
       tags: ["Ingestion"],
+      security: [{ runnerToken: [] }],
       body: {
         type: "object",
         properties: {
@@ -162,6 +175,142 @@ export async function registerRoutes(app) {
       await ensureDefaultSources();
     }
     const result = await runIngestion({ category: request.body?.category });
+    return result;
+  });
+
+  app.post("/articles/enrich", {
+    preHandler: requireRunnerToken,
+    schema: {
+      tags: ["Articles"],
+      security: [{ runnerToken: [] }],
+      description:
+        "Coleta notícias das fontes RSS e gera texto revisado via OpenRouter (modelos free)",
+      body: {
+        type: "object",
+        properties: {
+          category: { type: "string" },
+          limit: { type: "number", minimum: 1, maximum: 50 },
+          ensureIngestion: { type: "boolean" },
+          ensureSources: { type: "boolean" },
+        },
+      },
+    },
+  }, async (request) => {
+    const result = await runArticleEnrichment({
+      category: request.body?.category,
+      limit: request.body?.limit,
+      ensureIngestion: request.body?.ensureIngestion ?? true,
+      ensureSources: request.body?.ensureSources ?? true,
+    });
+    return result;
+  });
+
+  app.get("/banners", {
+    schema: {
+      tags: ["Banners"],
+      description: "Lista ofertas Shopee formatadas para banners digitais no frontend",
+      querystring: {
+        type: "object",
+        properties: {
+          type: { type: "string", enum: ["product", "shop", "campaign"] },
+          placement: { type: "string" },
+          featured: { type: "boolean" },
+          q: { type: "string" },
+          page: { type: "number", minimum: 1 },
+          limit: { type: "number", minimum: 1, maximum: 100 },
+        },
+      },
+    },
+  }, async (request) => {
+    const { page, limit, offset } = parsePagination(request.query);
+    const { items, total } = await findBanners({
+      offerType: request.query.type,
+      placement: request.query.placement,
+      featured: request.query.featured,
+      q: request.query.q,
+      limit,
+      offset,
+    });
+
+    return {
+      items,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit) || 1,
+    };
+  });
+
+  app.get("/banners/featured", {
+    schema: {
+      tags: ["Banners"],
+      description: "Banners em destaque para carrossel ou hero section",
+      querystring: {
+        type: "object",
+        properties: {
+          placement: { type: "string" },
+          limit: { type: "number", minimum: 1, maximum: 20 },
+        },
+      },
+    },
+  }, async (request) => {
+    const limit = Math.min(Math.max(Number(request.query.limit || 5), 1), 20);
+    const items = await getFeaturedBanners(limit, request.query.placement);
+    return { items, limit, placement: request.query.placement || null };
+  });
+
+  app.get("/banners/stats/sync", {
+    schema: {
+      tags: ["Banners"],
+      description: "Status da última sincronização de ofertas Shopee",
+    },
+  }, async () => getSyncStats());
+
+  app.get("/banners/:id", {
+    schema: {
+      tags: ["Banners"],
+      params: {
+        type: "object",
+        required: ["id"],
+        properties: {
+          id: { type: "number" },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const item = await getBannerById(request.params.id);
+    if (!item) {
+      reply.code(404);
+      return { message: "Not found" };
+    }
+    return item;
+  });
+
+  app.post("/banners/sync", {
+    preHandler: requireRunnerToken,
+    schema: {
+      tags: ["Banners"],
+      security: [{ runnerToken: [] }],
+      description: "Dispara sincronização manual de ofertas Shopee",
+      body: {
+        type: "object",
+        properties: {
+          keywords: {
+            type: "array",
+            items: { type: "string" },
+          },
+          types: {
+            type: "array",
+            items: { type: "string", enum: ["product", "shop", "campaign"] },
+          },
+        },
+      },
+    },
+  }, async (request) => {
+    const result = await runShopeeSync({
+      keywords: request.body?.keywords,
+      types: request.body?.types,
+    });
     return result;
   });
 }

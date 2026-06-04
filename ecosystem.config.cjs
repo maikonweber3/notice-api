@@ -30,5 +30,18 @@ module.exports = {
         NODE_ENV: "production",
       },
     },
+    {
+      name: "notice-shopee-worker",
+      cwd: __dirname,
+      script: "src/worker/shopeeCron.js",
+      instances: 1,
+      exec_mode: "fork",
+      autorestart: true,
+      watch: false,
+      max_memory_restart: "256M",
+      env_production: {
+        NODE_ENV: "production",
+      },
+    },
   ],
 };

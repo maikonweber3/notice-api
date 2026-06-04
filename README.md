@@ -31,6 +31,7 @@ cp .env.example .env
 - `ARTICLES_CLEANUP_ENABLED`: habilita limpeza automatica (`true/false`)
 - `ARTICLES_MAX_PER_CATEGORY`: maximo de artigos por categoria (padrao `200`)
 - `ARTICLES_MAX_AGE_DAYS`: remove artigos mais antigos que N dias (padrao `14`, use `0` para desativar)
+- `RUNNER_TOKEN`: token obrigatorio para `POST /ingestion/run` e `POST /cleanup/run`
 
 ## Banco de dados
 
@@ -66,13 +67,16 @@ Endpoints principais:
 - `POST /ingestion/run` (coleta manual; ao final executa limpeza de retencao)
 - `POST /cleanup/run` (limpeza manual sem nova coleta)
 
-Exemplo de ingestao manual:
+Exemplo de ingestao manual (requer `RUNNER_TOKEN` no `.env`):
 
 ```bash
 curl -X POST http://localhost:3000/ingestion/run \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer notice-runner-dev-token" \
   -d "{\"ensureSources\": true}"
 ```
+
+Alternativa sem `Authorization`: header `X-Runner-Token: notice-runner-dev-token`.
 
 ## Worker Cron
 

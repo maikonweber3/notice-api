@@ -42,6 +42,11 @@ services:
       CORS_ORIGIN: "*"
       REQUEST_TIMEOUT_MS: 15000
       USER_AGENT: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+      RUNNER_TOKEN: notice-runner-dev-token
+      SHOPEE_APP_ID: ${SHOPEE_APP_ID:-}
+      SHOPEE_SECRET: ${SHOPEE_SECRET:-}
+      SHOPEE_SYNC_KEYWORDS: ${SHOPEE_SYNC_KEYWORDS:-oferta,promocao,desconto}
+      SHOPEE_SYNC_TYPES: ${SHOPEE_SYNC_TYPES:-product,campaign}
     ports:
       - "3000:3000"
     restart: unless-stopped
@@ -60,7 +65,35 @@ services:
       CRON_EXPRESSION: "*/30 * * * *"
       REQUEST_TIMEOUT_MS: 15000
       USER_AGENT: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MAX_TOKENS: ${OPENROUTER_MAX_TOKENS:-1024}
+      OPENROUTER_FREE_MODELS: ${OPENROUTER_FREE_MODELS:-poolside/laguna-xs.2:free,liquid/lfm-2.5-1.2b-instruct:free,liquid/lfm-2.5-1.2b-thinking:free}
+      OPENROUTER_PAID_FALLBACK_MODEL: ${OPENROUTER_PAID_FALLBACK_MODEL:-meta-llama/llama-3.1-8b-instruct}
+      OPENROUTER_ALLOW_PAID_FALLBACK: ${OPENROUTER_ALLOW_PAID_FALLBACK:-true}
+      ARTICLE_ENRICHMENT_ENABLED: ${ARTICLE_ENRICHMENT_ENABLED:-true}
+      ARTICLE_ENRICHMENT_BATCH_SIZE: ${ARTICLE_ENRICHMENT_BATCH_SIZE:-3}
+      ARTICLE_ENRICHMENT_DELAY_MS: ${ARTICLE_ENRICHMENT_DELAY_MS:-12000}
     command: ["npm", "run", "worker:cron"]
+    restart: unless-stopped
+
+  shopee-worker:
+    build: .
+    container_name: notice-shopee-worker
+    profiles:
+      - local-db
+    depends_on:
+      - postgres
+      - migrate
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/news_scraper
+      SHOPEE_APP_ID: ${SHOPEE_APP_ID:-}
+      SHOPEE_SECRET: ${SHOPEE_SECRET:-}
+      SHOPEE_SYNC_ENABLED: "true"
+      SHOPEE_SYNC_CRON: ${SHOPEE_SYNC_CRON:-0 */6 * * *}
+      SHOPEE_SYNC_KEYWORDS: ${SHOPEE_SYNC_KEYWORDS:-oferta,promocao,desconto}
+      SHOPEE_SYNC_TYPES: ${SHOPEE_SYNC_TYPES:-product,campaign}
+      SHOPEE_SYNC_ON_START: "true"
+    command: ["npm", "run", "worker:shopee"]
     restart: unless-stopped
 
 volumes:

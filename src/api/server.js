@@ -17,6 +17,16 @@ await app.register(swagger, {
       description: "API para noticias coletadas com filtros, stats e ingestao manual.",
       version: "1.0.0",
     },
+    components: {
+      securitySchemes: {
+        runnerToken: {
+          type: "apiKey",
+          in: "header",
+          name: "Authorization",
+          description: "Bearer token (RUNNER_TOKEN). Alternativa: header X-Runner-Token.",
+        },
+      },
+    },
   },
 });
 

@@ -6,6 +6,7 @@ function sanitizeArticle(row) {
   return {
     ...row,
     summary: toPlainTextOrNull(row.summary, { maxLength: 500 }),
+    body: row.body ? toPlainTextOrNull(row.body) : null,
   };
 }
 
@@ -99,6 +100,8 @@ export async function findArticles(filters) {
       title,
       url,
       summary,
+      body,
+      body_generated_at AS "bodyGeneratedAt",
       published_at AS "publishedAt",
       collected_at AS "collectedAt"
     FROM articles
@@ -130,6 +133,8 @@ export async function getArticleById(id) {
       title,
       url,
       summary,
+      body,
+      body_generated_at AS "bodyGeneratedAt",
       published_at AS "publishedAt",
       collected_at AS "collectedAt"
     FROM articles
@@ -189,6 +194,54 @@ export async function pruneArticles({ maxPerCategory = 0, maxAgeDays = 0 } = {})
 export async function countArticles() {
   const result = await pool.query(`SELECT COUNT(*)::int AS total FROM articles`);
   return result.rows[0]?.total || 0;
+}
+
+export async function findArticlesPendingEnrichment({ category, limit = 10 } = {}) {
+  const params = [];
+  const clauses = ["body IS NULL"];
+
+  if (category) {
+    params.push(category);
+    clauses.push(`category = $${params.length}`);
+  }
+
+  params.push(limit);
+  const limitParam = `$${params.length}`;
+
+  const result = await pool.query(
+    `
+    SELECT
+      id,
+      source_type AS "sourceType",
+      source_name AS "sourceName",
+      source_url AS "sourceUrl",
+      category,
+      title,
+      url,
+      summary,
+      published_at AS "publishedAt",
+      collected_at AS "collectedAt"
+    FROM articles
+    WHERE ${clauses.join(" AND ")}
+    ORDER BY COALESCE(published_at, collected_at) DESC, id DESC
+    LIMIT ${limitParam}
+  `,
+    params
+  );
+
+  return result.rows.map(sanitizeArticle);
+}
+
+export async function updateArticleBody(id, body) {
+  const result = await pool.query(
+    `
+    UPDATE articles
+    SET body = $2, body_generated_at = NOW()
+    WHERE id = $1
+  `,
+    [id, body]
+  );
+  return { updated: result.rowCount };
 }
 
 export async function getStats() {
