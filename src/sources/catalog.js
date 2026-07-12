@@ -89,4 +89,22 @@ export const defaultSources = [
     sourceType: "rss",
     sourceUrl: "https://www.terra.com.br/diversao/rss.xml",
   },
+  {
+    name: "Livecoins",
+    category: "mercado-crypto",
+    sourceType: "rss",
+    sourceUrl: "https://livecoins.com.br/feed/",
+  },
+  {
+    name: "CriptoFacil",
+    category: "mercado-crypto",
+    sourceType: "rss",
+    sourceUrl: "https://criptofacil.com/feed/",
+  },
+  {
+    name: "InfoMoney Criptomoedas",
+    category: "mercado-crypto",
+    sourceType: "rss",
+    sourceUrl: "https://www.infomoney.com.br/tudo-sobre/criptomoedas/feed/",
+  },
 ];

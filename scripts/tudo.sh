@@ -22,6 +22,9 @@ npm run scrape -- \
   --rss "https://gshow.globo.com/rss/gshow/" \
   --rss "https://www.metropoles.com/entretenimento/feed/" \
   --rss "https://www.terra.com.br/diversao/rss.xml" \
+  --rss "https://livecoins.com.br/feed/" \
+  --rss "https://criptofacil.com/feed/" \
+  --rss "https://www.infomoney.com.br/tudo-sobre/criptomoedas/feed/" \
   --out "$OUT_FILE"
 
 echo "Extracao completa concluida: $OUT_FILE"
