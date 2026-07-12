@@ -11,11 +11,12 @@ function toNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export async function upsertOffers(offers) {
+export async function upsertOffers(offers, options = {}) {
   if (offers.length === 0) {
     return { upserted: 0 };
   }
 
+  const preservePresentation = Boolean(options.preservePresentation);
   const client = await pool.connect();
   let upserted = 0;
 
@@ -54,8 +55,14 @@ export async function upsertOffers(offers) {
           category_id = EXCLUDED.category_id,
           period_start = EXCLUDED.period_start,
           period_end = EXCLUDED.period_end,
-          banner_placement = EXCLUDED.banner_placement,
-          featured = EXCLUDED.featured,
+          banner_placement = CASE
+            WHEN $22::boolean THEN shopee_offers.banner_placement
+            ELSE EXCLUDED.banner_placement
+          END,
+          featured = CASE
+            WHEN $22::boolean THEN shopee_offers.featured
+            ELSE EXCLUDED.featured
+          END,
           active = TRUE,
           metadata = EXCLUDED.metadata,
           synced_at = NOW(),
@@ -83,6 +90,7 @@ export async function upsertOffers(offers) {
           offer.bannerPlacement || "default",
           offer.featured ?? false,
           JSON.stringify(offer.metadata || {}),
+          preservePresentation,
         ]
       );
       upserted += result.rowCount;
@@ -274,7 +282,7 @@ export async function getSyncStats() {
   return result.rows[0];
 }
 
-function formatBanner(row) {
+export function formatBanner(row) {
   if (!row) return null;
 
   const priceMin = toNumber(row.priceMin);
@@ -313,6 +321,37 @@ function formatBanner(row) {
     syncedAt: row.syncedAt,
     updatedAt: row.updatedAt,
   };
+}
+
+/** Formata oferta mapeada (ainda sem row do banco) no mesmo shape da API. */
+export function formatMappedOffer(offer) {
+  if (!offer) return null;
+  return formatBanner({
+    id: offer.id ?? null,
+    offerType: offer.offerType,
+    externalId: offer.externalId,
+    title: offer.title,
+    imageUrl: offer.imageUrl,
+    offerLink: offer.offerLink,
+    originalLink: offer.originalLink,
+    priceMin: offer.priceMin,
+    priceMax: offer.priceMax,
+    priceDiscountRate: offer.priceDiscountRate,
+    commissionRate: offer.commissionRate,
+    commission: offer.commission,
+    sales: offer.sales,
+    ratingStar: offer.ratingStar,
+    shopId: offer.shopId,
+    shopName: offer.shopName,
+    categoryId: offer.categoryId,
+    periodStart: offer.periodStart,
+    periodEnd: offer.periodEnd,
+    bannerPlacement: offer.bannerPlacement,
+    featured: offer.featured,
+    metadata: offer.metadata,
+    syncedAt: offer.syncedAt ?? null,
+    updatedAt: offer.updatedAt ?? null,
+  });
 }
 
 export function mapProductOffer(node, options = {}) {

@@ -14,16 +14,18 @@ await app.register(swagger, {
   openapi: {
     info: {
       title: "News Scraper API",
-      description: "API para noticias coletadas com filtros, stats e ingestao manual.",
-      version: "1.0.0",
+      description:
+        "API de noticias + plataforma Shopee Affiliate (busca live, catálogo Postgres e banners).",
+      version: "1.1.0",
     },
     components: {
       securitySchemes: {
         runnerToken: {
-          type: "apiKey",
-          in: "header",
-          name: "Authorization",
-          description: "Bearer token (RUNNER_TOKEN). Alternativa: header X-Runner-Token.",
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "RUNNER_TOKEN",
+          description:
+            "Token de administracao (variavel RUNNER_TOKEN). No Authorize, cole apenas o token — o Swagger adiciona o prefixo Bearer.",
         },
       },
     },
@@ -32,6 +34,9 @@ await app.register(swagger, {
 
 await app.register(swaggerUi, {
   routePrefix: "/docs",
+  uiConfig: {
+    persistAuthorization: true,
+  },
 });
 
 await registerRoutes(app);

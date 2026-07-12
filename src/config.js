@@ -34,6 +34,29 @@ export const config = {
   shopeeSyncEnabled: String(process.env.SHOPEE_SYNC_ENABLED || "true").toLowerCase() === "true",
   shopeeSyncCron: process.env.SHOPEE_SYNC_CRON || "0 */6 * * *",
   shopeeSyncOnStart: String(process.env.SHOPEE_SYNC_ON_START || "false").toLowerCase() === "true",
+  shopeeSearchCacheTtlSeconds: Math.max(
+    Number(process.env.SHOPEE_SEARCH_CACHE_TTL_SECONDS || 900),
+    0
+  ),
+  shopeeSearchDefaultLimit: Math.min(
+    Math.max(Number(process.env.SHOPEE_SEARCH_DEFAULT_LIMIT || 20), 1),
+    100
+  ),
+  shopeeSearchMaxLimit: Math.min(
+    Math.max(Number(process.env.SHOPEE_SEARCH_MAX_LIMIT || 50), 1),
+    100
+  ),
+  shopeeSearchMaxKeywordLength: Math.min(
+    Math.max(Number(process.env.SHOPEE_SEARCH_MAX_KEYWORD_LENGTH || 120), 1),
+    500
+  ),
+  shopeeLiveRateLimitPerMin: Math.max(
+    Number(process.env.SHOPEE_LIVE_RATE_LIMIT_PER_MIN || 60),
+    1
+  ),
+  shopeeLiveRequireToken: String(process.env.SHOPEE_LIVE_REQUIRE_TOKEN || "false").toLowerCase() === "true",
+  shopeeRefreshRequireToken:
+    String(process.env.SHOPEE_REFRESH_REQUIRE_TOKEN || "true").toLowerCase() === "true",
   openrouterApiKey: process.env.OPENROUTER_API_KEY || "",
   openrouterBaseUrl: process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1",
   openrouterModel: process.env.OPENROUTER_MODEL || "",
@@ -58,4 +81,23 @@ export const config = {
   ),
   articleEnrichmentEnabled:
     String(process.env.ARTICLE_ENRICHMENT_ENABLED || "true").toLowerCase() === "true",
+  xApiKey: process.env.API_KEY_X || process.env.X_API_KEY || "",
+  xApiSecret: process.env.API_SECRET_X || process.env.X_API_SECRET || "",
+  xBearerToken: (() => {
+    const raw = process.env.X_BEARER_TOKEN || "";
+    try {
+      return decodeURIComponent(raw);
+    } catch {
+      return raw;
+    }
+  })(),
+  xAccessToken: process.env.X_ACCESS_TOKEN || "",
+  xAccessTokenSecret: process.env.X_ACCESS_TOKEN_SECRET || "",
+  xPostMaxInputChars: Math.min(
+    Math.max(Number(process.env.X_POST_MAX_INPUT_CHARS || 3000), 1),
+    3000
+  ),
+  xPostWorkerEnabled: String(process.env.X_POST_WORKER_ENABLED || "true").toLowerCase() === "true",
+  xPostWorkerCron: process.env.X_POST_WORKER_CRON || "*/2 * * * *",
+  xPostWorkerOnStart: String(process.env.X_POST_WORKER_ON_START || "false").toLowerCase() === "true",
 };

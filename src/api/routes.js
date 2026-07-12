@@ -16,7 +16,14 @@ import {
 } from "../repositories/shopeeOffersRepository.js";
 import { runShopeeSync } from "../services/shopeeSyncService.js";
 import { runArticleEnrichment } from "../services/articleEnrichmentService.js";
+import {
+  getXPostById,
+  getXPostQueueStats,
+  queueXPost,
+  runXPostWorker,
+} from "../services/xPostService.js";
 import { requireRunnerToken } from "./runnerAuth.js";
+import { registerShopeeRoutes } from "./shopeeRoutes.js";
 
 function parsePagination(query) {
   const page = Math.max(Number(query.page || 1), 1);
@@ -26,6 +33,8 @@ function parsePagination(query) {
 }
 
 export async function registerRoutes(app) {
+  await registerShopeeRoutes(app);
+
   app.get("/health", {
     schema: {
       tags: ["System"],
@@ -204,6 +213,91 @@ export async function registerRoutes(app) {
     });
     return result;
   });
+
+  // Rotas X — sempre exigem RUNNER_TOKEN (ver runnerAuth.js)
+  app.post("/x/posts/queue", {
+    preHandler: requireRunnerToken,
+    schema: {
+      tags: ["X"],
+      security: [{ runnerToken: [] }],
+      description:
+        "Enfileira texto (até 3000 caracteres) para resumo via LLM e publicação no X",
+      body: {
+        type: "object",
+        required: ["text"],
+        properties: {
+          text: { type: "string", minLength: 1, maxLength: 3000 },
+        },
+      },
+      response: {
+        201: {
+          type: "object",
+          properties: {
+            id: { type: "number" },
+            status: { type: "string" },
+            sourceTextLength: { type: "number" },
+            createdAt: { type: "string" },
+          },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    try {
+      const item = await queueXPost(request.body.text);
+      reply.code(201);
+      return {
+        id: item.id,
+        status: item.status,
+        sourceTextLength: item.sourceText.length,
+        createdAt: item.createdAt,
+      };
+    } catch (error) {
+      reply.code(400);
+      return { message: error.message };
+    }
+  });
+
+  app.get("/x/posts/:id", {
+    preHandler: requireRunnerToken,
+    schema: {
+      tags: ["X"],
+      security: [{ runnerToken: [] }],
+      params: {
+        type: "object",
+        required: ["id"],
+        properties: {
+          id: { type: "number" },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const item = await getXPostById(request.params.id);
+    if (!item) {
+      reply.code(404);
+      return { message: "Not found" };
+    }
+    return item;
+  });
+
+  app.get("/x/posts/stats/queue", {
+    preHandler: requireRunnerToken,
+    schema: {
+      tags: ["X"],
+      security: [{ runnerToken: [] }],
+    },
+  }, async () => {
+    const byStatus = await getXPostQueueStats();
+    return { byStatus };
+  });
+
+  app.post("/x/posts/process", {
+    preHandler: requireRunnerToken,
+    schema: {
+      tags: ["X"],
+      security: [{ runnerToken: [] }],
+      description: "Processa manualmente o próximo item da fila (mesmo fluxo do worker)",
+    },
+  }, async () => runXPostWorker());
 
   app.get("/banners", {
     schema: {
