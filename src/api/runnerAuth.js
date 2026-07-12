@@ -2,8 +2,12 @@ import { config } from "../config.js";
 
 function extractRunnerToken(request) {
   const auth = request.headers.authorization;
-  if (typeof auth === "string" && auth.startsWith("Bearer ")) {
-    return auth.slice(7).trim();
+  if (typeof auth === "string") {
+    const trimmed = auth.trim();
+    if (/^bearer\s+/i.test(trimmed)) {
+      return trimmed.replace(/^bearer\s+/i, "").trim();
+    }
+    return trimmed;
   }
   const header = request.headers["x-runner-token"];
   if (typeof header === "string") {
@@ -14,13 +18,11 @@ function extractRunnerToken(request) {
 
 export async function requireRunnerToken(request, reply) {
   if (!config.runnerToken) {
-    reply.code(503);
-    return { message: "Runner token not configured" };
+    return reply.code(503).send({ message: "Runner token not configured" });
   }
 
   const provided = extractRunnerToken(request);
   if (!provided || provided !== config.runnerToken) {
-    reply.code(401);
-    return { message: "Unauthorized" };
+    return reply.code(401).send({ message: "Unauthorized" });
   }
 }
