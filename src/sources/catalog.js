@@ -107,4 +107,52 @@ export const defaultSources = [
     sourceType: "rss",
     sourceUrl: "https://www.infomoney.com.br/tudo-sobre/criptomoedas/feed/",
   },
+  {
+    name: "IGN Brasil",
+    category: "games",
+    sourceType: "rss",
+    sourceUrl: "https://br.ign.com/feed.xml",
+  },
+  {
+    name: "Critical Hits",
+    category: "games",
+    sourceType: "rss",
+    sourceUrl: "https://criticalhits.com.br/feed/",
+  },
+  {
+    name: "Voxel",
+    category: "games",
+    sourceType: "rss",
+    sourceUrl: "https://feeds.feedburner.com/Voxel",
+  },
+  {
+    name: "Eurogamer.pt",
+    category: "games",
+    sourceType: "rss",
+    sourceUrl: "https://www.eurogamer.pt/feed",
+  },
+  {
+    name: "Metrópoles Cinema",
+    category: "cinema",
+    sourceType: "rss",
+    sourceUrl: "https://www.metropoles.com/entretenimento/cinema/feed/",
+  },
+  {
+    name: "CinePOP",
+    category: "cinema",
+    sourceType: "rss",
+    sourceUrl: "https://cinepop.com.br/feed/",
+  },
+  {
+    name: "UOL Cinema",
+    category: "cinema",
+    sourceType: "rss",
+    sourceUrl: "https://rss.uol.com.br/feed/cinema.xml",
+  },
+  {
+    name: "Rolling Stone TV & Movies",
+    category: "cinema",
+    sourceType: "rss",
+    sourceUrl: "https://www.rollingstone.com/tv-movies/feed/",
+  },
 ];

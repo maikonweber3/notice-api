@@ -63,6 +63,8 @@ Endpoints principais:
 - `GET /articles?category=entretenimento&page=1&limit=20`
 - `GET /articles?category=investimentos&q=bitcoin&page=1&limit=20`
 - `GET /articles?category=mercado-crypto&page=1&limit=20`
+- `GET /articles?category=games&page=1&limit=20`
+- `GET /articles?category=cinema&page=1&limit=20`
 - `GET /articles/:id`
 - `GET /stats`
 - `POST /ingestion/run` (coleta manual; ao final executa limpeza de retencao)
@@ -96,6 +98,8 @@ Mantidos para coleta rapida em arquivo:
 - `./scripts/esportes.sh [arquivo_saida]`
 - `./scripts/entretenimento.sh [arquivo_saida]`
 - `./scripts/mercado-crypto.sh [arquivo_saida]`
+- `./scripts/games.sh [arquivo_saida]`
+- `./scripts/cinema.sh [arquivo_saida]`
 - `./scripts/tudo.sh [arquivo_saida]`
 - `./scripts/extrair.sh <tema> [arquivo_saida]`
 
@@ -105,6 +109,8 @@ Exemplos:
 bash ./scripts/extrair.sh investimentos
 bash ./scripts/extrair.sh tecnologia ./data/minha-coleta.jsonl
 bash ./scripts/extrair.sh mercado-crypto
+bash ./scripts/extrair.sh games
+bash ./scripts/extrair.sh cinema
 ```
 
 ## Retencao e limpeza

@@ -13,21 +13,10 @@ await app.register(cors, { origin: config.corsOrigin });
 await app.register(swagger, {
   openapi: {
     info: {
-      title: "News Scraper API",
+      title: "Notice API",
       description:
-        "API de noticias + plataforma Shopee Affiliate (busca live, catálogo Postgres e banners).",
+        "API pública de notícias, catálogo Shopee Affiliate e banners. Rotas internas (X/tweet, ingestão, cleanup) não são documentadas aqui.",
       version: "1.1.0",
-    },
-    components: {
-      securitySchemes: {
-        runnerToken: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "RUNNER_TOKEN",
-          description:
-            "Token de administracao (variavel RUNNER_TOKEN). No Authorize, cole apenas o token — o Swagger adiciona o prefixo Bearer.",
-        },
-      },
     },
   },
 });

@@ -1,5 +1,8 @@
 /**
- * PM2 — produção na VPS (Postgres existente em iputa-postgres:5433)
+ * PM2 — produção na VPS
+ * Postgres: container `iputa-postgres` em 127.0.0.1:5433 (volume iputa-api_pgdata;
+ * notice-api usa o database `notice_api` nele). Subir só o Postgres:
+ *   cd /root/iputa/iputa-api && docker compose up -d postgres
  * Uso: pm2 start ecosystem.config.cjs --env production
  */
 module.exports = {

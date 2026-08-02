@@ -24,12 +24,18 @@ case "$TEMA" in
   mercado-crypto)
     ./scripts/mercado-crypto.sh "${OUT_FILE:-./data/mercado-crypto.jsonl}"
     ;;
+  games)
+    ./scripts/games.sh "${OUT_FILE:-./data/games.jsonl}"
+    ;;
+  cinema)
+    ./scripts/cinema.sh "${OUT_FILE:-./data/cinema.jsonl}"
+    ;;
   tudo)
     ./scripts/tudo.sh "${OUT_FILE:-./data/noticias-tudo.jsonl}"
     ;;
   *)
     echo "Tema invalido: $TEMA"
-    echo "Uso: ./scripts/extrair.sh [investimentos|tecnologia|programacao|esportes|entretenimento|mercado-crypto|tudo] [arquivo_saida]"
+    echo "Uso: ./scripts/extrair.sh [investimentos|tecnologia|programacao|esportes|entretenimento|mercado-crypto|games|cinema|tudo] [arquivo_saida]"
     exit 1
     ;;
 esac

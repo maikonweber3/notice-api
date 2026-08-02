@@ -25,6 +25,14 @@ npm run scrape -- \
   --rss "https://livecoins.com.br/feed/" \
   --rss "https://criptofacil.com/feed/" \
   --rss "https://www.infomoney.com.br/tudo-sobre/criptomoedas/feed/" \
+  --rss "https://br.ign.com/feed.xml" \
+  --rss "https://criticalhits.com.br/feed/" \
+  --rss "https://feeds.feedburner.com/Voxel" \
+  --rss "https://www.eurogamer.pt/feed" \
+  --rss "https://www.metropoles.com/entretenimento/cinema/feed/" \
+  --rss "https://cinepop.com.br/feed/" \
+  --rss "https://rss.uol.com.br/feed/cinema.xml" \
+  --rss "https://www.rollingstone.com/tv-movies/feed/" \
   --out "$OUT_FILE"
 
 echo "Extracao completa concluida: $OUT_FILE"

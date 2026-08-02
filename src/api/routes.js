@@ -145,6 +145,7 @@ export async function registerRoutes(app) {
   app.post("/cleanup/run", {
     preHandler: requireRunnerToken,
     schema: {
+      hide: true,
       tags: ["Cleanup"],
       security: [{ runnerToken: [] }],
       body: {
@@ -169,6 +170,7 @@ export async function registerRoutes(app) {
   app.post("/ingestion/run", {
     preHandler: requireRunnerToken,
     schema: {
+      hide: true,
       tags: ["Ingestion"],
       security: [{ runnerToken: [] }],
       body: {
@@ -190,6 +192,7 @@ export async function registerRoutes(app) {
   app.post("/articles/enrich", {
     preHandler: requireRunnerToken,
     schema: {
+      hide: true,
       tags: ["Articles"],
       security: [{ runnerToken: [] }],
       description:
@@ -214,10 +217,11 @@ export async function registerRoutes(app) {
     return result;
   });
 
-  // Rotas X — sempre exigem RUNNER_TOKEN (ver runnerAuth.js)
+  // Rotas X — internas (RUNNER_TOKEN); ocultas do Swagger público
   app.post("/x/posts/queue", {
     preHandler: requireRunnerToken,
     schema: {
+      hide: true,
       tags: ["X"],
       security: [{ runnerToken: [] }],
       description:
@@ -260,6 +264,7 @@ export async function registerRoutes(app) {
   app.get("/x/posts/:id", {
     preHandler: requireRunnerToken,
     schema: {
+      hide: true,
       tags: ["X"],
       security: [{ runnerToken: [] }],
       params: {
@@ -282,6 +287,7 @@ export async function registerRoutes(app) {
   app.get("/x/posts/stats/queue", {
     preHandler: requireRunnerToken,
     schema: {
+      hide: true,
       tags: ["X"],
       security: [{ runnerToken: [] }],
     },
@@ -293,6 +299,7 @@ export async function registerRoutes(app) {
   app.post("/x/posts/process", {
     preHandler: requireRunnerToken,
     schema: {
+      hide: true,
       tags: ["X"],
       security: [{ runnerToken: [] }],
       description: "Processa manualmente o próximo item da fila (mesmo fluxo do worker)",
@@ -383,6 +390,7 @@ export async function registerRoutes(app) {
   app.post("/banners/sync", {
     preHandler: requireRunnerToken,
     schema: {
+      hide: true,
       tags: ["Banners"],
       security: [{ runnerToken: [] }],
       description: "Dispara sincronização manual de ofertas Shopee",
