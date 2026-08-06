@@ -1,3 +1,6 @@
+# Frontend (repo separado: maikonweber/noticia-api)
+frontend/
+
 # Dependencies
 node_modules/
 
