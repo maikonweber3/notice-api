@@ -165,6 +165,7 @@ const OFFER_SELECT = `
   period_end AS "periodEnd",
   banner_placement AS "bannerPlacement",
   featured,
+  rank_score AS "rankScore",
   metadata,
   synced_at AS "syncedAt",
   updated_at AS "updatedAt"
@@ -300,6 +301,8 @@ export async function searchLocalOffers(filters) {
     orderBy = "sales DESC NULLS LAST, commission_rate DESC NULLS LAST";
   } else if (sort === "recent") {
     orderBy = "synced_at DESC NULLS LAST, updated_at DESC";
+  } else if (sort === "rank") {
+    orderBy = "rank_score DESC, sales DESC NULLS LAST, commission_rate DESC NULLS LAST";
   }
 
   const where = `WHERE ${clauses.join(" AND ")}`;

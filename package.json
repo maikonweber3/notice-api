@@ -1,6 +1,6 @@
 {
   "name": "news-scraper",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Plataforma de scraping com API, cron e PostgreSQL",
   "main": "src/api/server.js",
   "type": "module",
@@ -11,6 +11,7 @@
     "worker:cron": "node src/worker/cron.js",
     "worker:shopee": "node src/worker/shopeeCron.js",
     "worker:x": "node src/worker/xCron.js",
+    "worker:whatsapp": "node src/worker/whatsappCron.js",
     "db:migrate": "node src/db/migrate.js",
     "db:sanitize-summaries": "node scripts/sanitize-summaries.js",
     "db:cleanup": "node scripts/cleanup-articles.js",
@@ -30,6 +31,8 @@
     "fast-xml-parser": "^4.5.0",
     "fastify": "^5.0.0",
     "node-cron": "^3.0.3",
-    "pg": "^8.13.1"
+    "pg": "^8.13.1",
+    "qrcode": "^1.5.4",
+    "@whiskeysockets/baileys": "7.0.0-rc13"
   }
 }

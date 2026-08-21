@@ -191,6 +191,31 @@ export async function pruneArticles({ maxPerCategory = 0, maxAgeDays = 0 } = {})
   };
 }
 
+export async function findRandomArticle({ maxAgeDays = 7 } = {}) {
+  const result = await pool.query(
+    `
+    SELECT
+      id,
+      source_type AS "sourceType",
+      source_name AS "sourceName",
+      source_url AS "sourceUrl",
+      category,
+      title,
+      url,
+      summary,
+      body,
+      published_at AS "publishedAt",
+      collected_at AS "collectedAt"
+    FROM articles
+    WHERE COALESCE(published_at, collected_at) >= NOW() - ($1::text || ' days')::interval
+    ORDER BY RANDOM()
+    LIMIT 1
+  `,
+    [maxAgeDays]
+  );
+  return sanitizeArticle(result.rows[0] || null);
+}
+
 export async function countArticles() {
   const result = await pool.query(`SELECT COUNT(*)::int AS total FROM articles`);
   return result.rows[0]?.total || 0;

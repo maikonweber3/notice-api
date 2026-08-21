@@ -234,7 +234,7 @@ export async function registerShopeeRoutes(app) {
           categoryId: { type: "number" },
           sort: {
             type: "string",
-            enum: ["relevance", "commission", "price_asc", "price_desc", "sales", "recent"],
+            enum: ["relevance", "commission", "price_asc", "price_desc", "sales", "recent", "rank"],
           },
           page: { type: "number", minimum: 1 },
           limit: { type: "number", minimum: 1, maximum: maxLimit },

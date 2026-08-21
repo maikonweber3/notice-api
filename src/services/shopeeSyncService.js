@@ -155,11 +155,15 @@ export async function runShopeeSync(options = {}) {
       offersUpserted: totalUpserted,
     });
 
+    const { refreshOfferRankScores } = await import("./offerRankService.js");
+    const ranking = await refreshOfferRankScores();
+
     return {
       syncRunId: syncRun.id,
       status: "success",
       pagesFetched: totalPages,
       offersUpserted: totalUpserted,
+      ranking,
       details,
     };
   } catch (error) {

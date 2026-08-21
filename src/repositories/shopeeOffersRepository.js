@@ -160,6 +160,7 @@ export async function findBanners(filters) {
       period_end AS "periodEnd",
       banner_placement AS "bannerPlacement",
       featured,
+      rank_score AS "rankScore",
       metadata,
       synced_at AS "syncedAt",
       updated_at AS "updatedAt"
@@ -208,6 +209,7 @@ export async function getBannerById(id) {
       period_end AS "periodEnd",
       banner_placement AS "bannerPlacement",
       featured,
+      rank_score AS "rankScore",
       metadata,
       synced_at AS "syncedAt",
       updated_at AS "updatedAt"
@@ -317,6 +319,7 @@ export function formatBanner(row) {
     periodEnd: row.periodEnd,
     placement: row.bannerPlacement,
     featured: row.featured,
+    rankScore: toNumber(row.rankScore),
     metadata: row.metadata,
     syncedAt: row.syncedAt,
     updatedAt: row.updatedAt,
@@ -348,6 +351,7 @@ export function formatMappedOffer(offer) {
     periodEnd: offer.periodEnd,
     bannerPlacement: offer.bannerPlacement,
     featured: offer.featured,
+    rankScore: offer.rankScore,
     metadata: offer.metadata,
     syncedAt: offer.syncedAt ?? null,
     updatedAt: offer.updatedAt ?? null,

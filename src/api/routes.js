@@ -24,6 +24,7 @@ import {
 } from "../services/xPostService.js";
 import { requireRunnerToken } from "./runnerAuth.js";
 import { registerShopeeRoutes } from "./shopeeRoutes.js";
+import { registerWhatsAppRoutes } from "./whatsappRoutes.js";
 
 function parsePagination(query) {
   const page = Math.max(Number(query.page || 1), 1);
@@ -34,6 +35,7 @@ function parsePagination(query) {
 
 export async function registerRoutes(app) {
   await registerShopeeRoutes(app);
+  await registerWhatsAppRoutes(app);
 
   app.get("/health", {
     schema: {

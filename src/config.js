@@ -100,4 +100,36 @@ export const config = {
   xPostWorkerEnabled: String(process.env.X_POST_WORKER_ENABLED || "true").toLowerCase() === "true",
   xPostWorkerCron: process.env.X_POST_WORKER_CRON || "*/2 * * * *",
   xPostWorkerOnStart: String(process.env.X_POST_WORKER_ON_START || "false").toLowerCase() === "true",
+  whatsappSessionDir: process.env.WHATSAPP_SESSION_DIR || "./data/whatsapp-sessions",
+  whatsappQrTtlMs: Math.max(Number(process.env.WHATSAPP_QR_TTL_MS || 60_000), 5_000),
+  whatsappReconnectDelayMs: Math.max(
+    Number(process.env.WHATSAPP_RECONNECT_DELAY_MS || 5000),
+    1000
+  ),
+  whatsappPublishEnabled:
+    String(process.env.WHATSAPP_PUBLISH_ENABLED || "true").toLowerCase() === "true",
+  whatsappPublishCron: process.env.WHATSAPP_PUBLISH_CRON || "0 */3 * * *",
+  whatsappPublishOnStart:
+    String(process.env.WHATSAPP_PUBLISH_ON_START || "false").toLowerCase() === "true",
+  whatsappNewsEnabled:
+    String(process.env.WHATSAPP_NEWS_ENABLED || "true").toLowerCase() === "true",
+  whatsappNewsCron: process.env.WHATSAPP_NEWS_CRON || "0 * * * *",
+  whatsappNewsGroupJid:
+    process.env.WHATSAPP_NEWS_GROUP_JID || "120363428120577436@g.us",
+  whatsappNewsSiteUrl: (
+    process.env.WHATSAPP_NEWS_SITE_URL || "https://news.muttercorp.com.br"
+  ).replace(/\/$/, ""),
+  whatsappNewsOffers: Math.min(
+    Math.max(Number(process.env.WHATSAPP_NEWS_OFFERS || 2), 0),
+    5
+  ),
+  whatsappPostsPerRun: Math.min(
+    Math.max(Number(process.env.WHATSAPP_POSTS_PER_RUN || 3), 1),
+    20
+  ),
+  whatsappOfferCooldownHours: Math.max(
+    Number(process.env.WHATSAPP_OFFER_COOLDOWN_HOURS || 48),
+    1
+  ),
+  whatsappDrainMs: Math.max(Number(process.env.WHATSAPP_DRAIN_MS || 15_000), 5_000),
 };
