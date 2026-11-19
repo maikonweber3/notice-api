@@ -1,10 +1,19 @@
 import { XMLParser } from "fast-xml-parser";
 import { httpClient } from "../httpClient.js";
 import { toPlainTextOrNull } from "../utils/plainText.js";
+import { config } from "../config.js";
 
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: "",
+  // Feeds grandes (Folha, Guardian, Dev.to, CISA...) usam muitas entidades; o limite
+  // padrão (1000) derrubava a coleta. Mantém limites de tamanho contra "billion laughs".
+  processEntities: {
+    enabled: true,
+    maxTotalExpansions: 100000,
+    maxExpandedLength: 5_000_000,
+    maxExpansionDepth: 10,
+  },
 });
 
 function normalizeArray(value) {
@@ -62,5 +71,8 @@ export async function scrapeRss(feedUrl) {
     };
   });
 
-  return [...rssResults, ...atomResults].filter((item) => item.title);
+  return [...rssResults, ...atomResults]
+    .filter((item) => item.title)
+    .sort((a, b) => String(b.publishedAt || "").localeCompare(String(a.publishedAt || "")))
+    .slice(0, config.rssMaxItemsPerFeed);
 }

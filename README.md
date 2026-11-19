@@ -203,3 +203,19 @@ Servicos:
 - API: `http://localhost:3000`
 - Swagger: `http://localhost:3000/docs`
 - PostgreSQL: `localhost:5432`
+
+## Vulnerabilidades (CVEs)
+
+Worker `notice-cve-worker` (`src/worker/vulnCron.js`, cron `VULN_SYNC_CRON`, padrão a cada 2h) sincroniza:
+
+- **NVD CVE API 2.0** — incremental por `lastModStartDate/lastModEndDate` (cursor em `vuln_sync_state`), respeita rate limit (6,5s entre páginas sem chave; `NVD_API_KEY` opcional).
+- **CISA KEV** (JSON oficial) — marca `kev=true`, datas, ação requerida e uso por ransomware.
+- **GitHub Security Advisories** (`/advisories`, reviewed) — inclui advisories sem CVE (chave GHSA).
+
+Tabela `vulnerabilities` (migration 010): dedupe por `vuln_id`, merge entre fontes (CVSS da NVD tem prioridade), `update_count` registra atualizações.
+
+Endpoints: `GET /vulnerabilities` (q, severity=CRITICAL,HIGH, kev, source, minScore, sort=modified|published|score|kev), `GET /vulnerabilities/stats`, `GET /vulnerabilities/:id`, `POST /vulnerabilities/sync` (runner token).
+
+Sync manual: `npm run vulns:sync [nvd|kev|ghsa]`. Frontend: `/vulnerabilidades`.
+
+Notícias de segurança (RSS) entram na categoria `seguranca`; novas categorias: `ia`, `economia`, `brasil`, `mundo`, `ciencia`.

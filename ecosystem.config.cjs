@@ -103,6 +103,19 @@ module.exports = {
       },
     },
     {
+      name: "notice-cve-worker",
+      cwd: __dirname,
+      script: "src/worker/vulnCron.js",
+      instances: 1,
+      exec_mode: "fork",
+      autorestart: true,
+      watch: false,
+      max_memory_restart: "512M",
+      env_production: {
+        NODE_ENV: "production",
+      },
+    },
+    {
       name: "notice-frontend",
       cwd: `${__dirname}/frontend`,
       script: "node_modules/next/dist/bin/next",

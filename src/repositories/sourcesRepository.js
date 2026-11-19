@@ -55,3 +55,13 @@ export async function listSources({ active = true, category } = {}) {
   const result = await pool.query(query, params);
   return result.rows;
 }
+
+export async function deactivateSources(sources = []) {
+  for (const source of sources) {
+    await pool.query(
+      `UPDATE sources SET active = FALSE, updated_at = NOW()
+       WHERE source_url = $1 AND source_type = $2 AND active = TRUE`,
+      [source.sourceUrl, source.sourceType]
+    );
+  }
+}

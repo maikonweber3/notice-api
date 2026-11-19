@@ -2,13 +2,14 @@ import { scrapeRss } from "../scrapers/rssScraper.js";
 import { scrapeHtml } from "../scrapers/htmlScraper.js";
 import { computeArticleHash } from "../utils/hash.js";
 import { insertArticles } from "../repositories/articlesRepository.js";
-import { listSources, upsertSources } from "../repositories/sourcesRepository.js";
-import { defaultSources } from "../sources/catalog.js";
+import { deactivateSources, listSources, upsertSources } from "../repositories/sourcesRepository.js";
+import { defaultSources, retiredSources } from "../sources/catalog.js";
 import { toPlainTextOrNull } from "../utils/plainText.js";
 import { runArticleCleanup } from "./cleanupService.js";
 
 export async function ensureDefaultSources() {
   await upsertSources(defaultSources);
+  await deactivateSources(retiredSources);
 }
 
 export async function runIngestion({ category } = {}) {

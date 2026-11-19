@@ -25,6 +25,7 @@ import { requireRunnerToken } from "./runnerAuth.js";
 import { registerShopeeRoutes } from "./shopeeRoutes.js";
 import { registerWhatsAppRoutes } from "./whatsappRoutes.js";
 import { registerJevRoutes } from "./jevRoutes.js";
+import { registerVulnRoutes } from "./vulnRoutes.js";
 import {
   getBitcoinLatest,
   runBitcoinDailyAnalysis,
@@ -41,6 +42,7 @@ export async function registerRoutes(app) {
   await registerShopeeRoutes(app);
   await registerWhatsAppRoutes(app);
   await registerJevRoutes(app);
+  await registerVulnRoutes(app);
 
   app.get("/bitcoin/latest", {
     schema: {
