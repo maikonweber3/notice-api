@@ -15,7 +15,6 @@ import {
   getSyncStats,
 } from "../repositories/shopeeOffersRepository.js";
 import { runShopeeSync } from "../services/shopeeSyncService.js";
-import { runArticleEnrichment } from "../services/articleEnrichmentService.js";
 import {
   getXPostById,
   getXPostQueueStats,
@@ -25,6 +24,11 @@ import {
 import { requireRunnerToken } from "./runnerAuth.js";
 import { registerShopeeRoutes } from "./shopeeRoutes.js";
 import { registerWhatsAppRoutes } from "./whatsappRoutes.js";
+import { registerJevRoutes } from "./jevRoutes.js";
+import {
+  getBitcoinLatest,
+  runBitcoinDailyAnalysis,
+} from "../services/bitcoinDailyService.js";
 
 function parsePagination(query) {
   const page = Math.max(Number(query.page || 1), 1);
@@ -36,6 +40,34 @@ function parsePagination(query) {
 export async function registerRoutes(app) {
   await registerShopeeRoutes(app);
   await registerWhatsAppRoutes(app);
+  await registerJevRoutes(app);
+
+  app.get("/bitcoin/latest", {
+    schema: {
+      tags: ["Bitcoin"],
+      description: "Última análise diária de Bitcoin gerada pelo notice-api",
+    },
+  }, async (request, reply) => {
+    const item = await getBitcoinLatest({
+      symbol: request.query?.symbol,
+      interval: request.query?.interval,
+    });
+    if (!item) {
+      reply.code(404);
+      return { message: "Nenhuma análise de Bitcoin encontrada" };
+    }
+    return item;
+  });
+
+  app.post("/bitcoin/run", {
+    preHandler: requireRunnerToken,
+    schema: {
+      hide: true,
+      tags: ["Bitcoin"],
+      security: [{ runnerToken: [] }],
+      description: "Dispara análise diária de Bitcoin (crypto-analytic) e publica no Telegram",
+    },
+  }, async () => runBitcoinDailyAnalysis({ publish: true }));
 
   app.get("/health", {
     schema: {
@@ -188,34 +220,6 @@ export async function registerRoutes(app) {
       await ensureDefaultSources();
     }
     const result = await runIngestion({ category: request.body?.category });
-    return result;
-  });
-
-  app.post("/articles/enrich", {
-    preHandler: requireRunnerToken,
-    schema: {
-      hide: true,
-      tags: ["Articles"],
-      security: [{ runnerToken: [] }],
-      description:
-        "Coleta notícias das fontes RSS e gera texto revisado via OpenRouter (modelos free)",
-      body: {
-        type: "object",
-        properties: {
-          category: { type: "string" },
-          limit: { type: "number", minimum: 1, maximum: 50 },
-          ensureIngestion: { type: "boolean" },
-          ensureSources: { type: "boolean" },
-        },
-      },
-    },
-  }, async (request) => {
-    const result = await runArticleEnrichment({
-      category: request.body?.category,
-      limit: request.body?.limit,
-      ensureIngestion: request.body?.ensureIngestion ?? true,
-      ensureSources: request.body?.ensureSources ?? true,
-    });
     return result;
   });
 

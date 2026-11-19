@@ -2,6 +2,13 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+function parseCsv(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export const config = {
   userAgent:
     process.env.USER_AGENT ||
@@ -71,6 +78,9 @@ export const config = {
     .split(",")
     .map((model) => model.trim())
     .filter(Boolean),
+  jevModel: process.env.JEV_MODEL || "~typesafe/jev-latest",
+  jevTimeoutMs: Math.max(Number(process.env.JEV_TIMEOUT_MS || 60_000), 5_000),
+  jevApiToken: process.env.JEV_API_TOKEN || "",
   articleEnrichmentBatchSize: Math.min(
     Math.max(Number(process.env.ARTICLE_ENRICHMENT_BATCH_SIZE || 3), 1),
     50
@@ -80,7 +90,7 @@ export const config = {
     0
   ),
   articleEnrichmentEnabled:
-    String(process.env.ARTICLE_ENRICHMENT_ENABLED || "true").toLowerCase() === "true",
+    String(process.env.ARTICLE_ENRICHMENT_ENABLED || "false").toLowerCase() === "true",
   xApiKey: process.env.API_KEY_X || process.env.X_API_KEY || "",
   xApiSecret: process.env.API_SECRET_X || process.env.X_API_SECRET || "",
   xBearerToken: (() => {
@@ -113,18 +123,27 @@ export const config = {
     String(process.env.WHATSAPP_PUBLISH_ON_START || "false").toLowerCase() === "true",
   whatsappNewsEnabled:
     String(process.env.WHATSAPP_NEWS_ENABLED || "true").toLowerCase() === "true",
-  whatsappNewsCron: process.env.WHATSAPP_NEWS_CRON || "0 * * * *",
+  whatsappNewsCron: process.env.WHATSAPP_NEWS_CRON || "0 */3 * * *",
   whatsappNewsGroupJid:
     process.env.WHATSAPP_NEWS_GROUP_JID || "120363428120577436@g.us",
   whatsappNewsSiteUrl: (
     process.env.WHATSAPP_NEWS_SITE_URL || "https://news.muttercorp.com.br"
   ).replace(/\/$/, ""),
   whatsappNewsOffers: Math.min(
-    Math.max(Number(process.env.WHATSAPP_NEWS_OFFERS || 2), 0),
+    Math.max(Number(process.env.WHATSAPP_NEWS_OFFERS || 0), 0),
     5
   ),
+  whatsappNewsPerRun: 1,
+  whatsappNewsLookbackHours: Math.min(
+    Math.max(Number(process.env.WHATSAPP_NEWS_LOOKBACK_HOURS || 36), 6),
+    168
+  ),
+  whatsappNewsThemes: parseCsv(
+    process.env.WHATSAPP_NEWS_THEMES ||
+      "tecnologia,investimentos,games,esportes,entretenimento,cinema,programacao,mercado-crypto"
+  ),
   whatsappPostsPerRun: Math.min(
-    Math.max(Number(process.env.WHATSAPP_POSTS_PER_RUN || 3), 1),
+    Math.max(Number(process.env.WHATSAPP_POSTS_PER_RUN || 2), 1),
     20
   ),
   whatsappOfferCooldownHours: Math.max(
@@ -132,4 +151,40 @@ export const config = {
     1
   ),
   whatsappDrainMs: Math.max(Number(process.env.WHATSAPP_DRAIN_MS || 15_000), 5_000),
+  telegramBotToken: (process.env.TELEGRAM_BOT_TOKEN || "").trim(),
+  telegramNewsChatId: (
+    process.env.TELEGRAM_NEWS_CHAT_ID ||
+    process.env.TELEGRAM_CHAT_ID ||
+    parseCsv(process.env.TELEGRAM_CHAT_IDS || "@btcusdtprevisao")[0] ||
+    ""
+  ).trim(),
+  telegramChatIds: [
+    ...new Set([
+      ...parseCsv(
+        process.env.TELEGRAM_CHAT_IDS || process.env.TELEGRAM_CHAT_ID || "@btcusdtprevisao"
+      ),
+      (
+        process.env.TELEGRAM_NEWS_CHAT_ID ||
+        process.env.TELEGRAM_CHAT_ID ||
+        ""
+      ).trim(),
+    ].filter(Boolean)),
+  ],
+  bitcoinAnalysisEnabled:
+    String(process.env.BITCOIN_ANALYSIS_ENABLED || "true").toLowerCase() === "true",
+  bitcoinAnalysisCron: process.env.BITCOIN_ANALYSIS_CRON || "0 8 * * *",
+  bitcoinAnalysisTimezone: process.env.BITCOIN_ANALYSIS_TIMEZONE || "America/Sao_Paulo",
+  bitcoinSymbol: (process.env.BITCOIN_SYMBOL || "BTCUSDT").trim(),
+  bitcoinInterval: (process.env.BITCOIN_INTERVAL || "1d").trim(),
+  bitcoinCandleLimit: Math.min(
+    Math.max(Number(process.env.BITCOIN_CANDLE_LIMIT || 500), 50),
+    1000
+  ),
+  cryptoAnalyticUrl: (
+    process.env.CRYPTO_ANALYTIC_URL || "http://127.0.0.1:8765"
+  ).replace(/\/$/, ""),
+  cryptoAnalyticTimeoutMs: Math.max(
+    Number(process.env.CRYPTO_ANALYTIC_TIMEOUT_MS || 180_000),
+    10_000
+  ),
 };

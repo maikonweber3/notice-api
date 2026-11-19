@@ -1,11 +1,13 @@
 import { config } from "../config.js";
+import { mirrorNewsToTelegram } from "./telegramNewsService.js";
 import {
   fetchGroupInviteLink,
+  getInstanceRow,
   isWhatsAppConnected,
   listWhatsAppGroups,
   sendToJid,
 } from "../integrations/whatsapp/gateway.js";
-import { findRandomArticle } from "../repositories/articlesRepository.js";
+import { analyzeMostRelevantNews, newsThemeLabel, pickNewsTheme } from "./whatsappNewsAnalysisService.js";
 import {
   getOfferGroupById,
   getOfferGroupByJid,
@@ -15,8 +17,10 @@ import {
 } from "../repositories/offerGroupsRepository.js";
 import {
   claimNextWhatsAppPost,
+  discardUnsentWhatsAppPosts,
   enqueueWhatsAppPost,
   getWhatsAppQueueStats,
+  wasArticleQueued,
   markWhatsAppFailed,
   markWhatsAppPosted,
   reserveOffersCooldown,
@@ -55,6 +59,12 @@ function formatBrl(value) {
     style: "currency",
     currency: "BRL",
   }).format(Number(value));
+}
+
+async function whatsappReadyToPublish() {
+  if (isWhatsAppConnected()) return true;
+  const row = await getInstanceRow();
+  return row.status === "connected";
 }
 
 function isNewsGroup(group) {
@@ -103,17 +113,17 @@ export function buildOfferMessage(offer, rank) {
   return lines.join("\n").trim();
 }
 
-function buildNewsMessage(article, offers) {
+function buildNewsMessage(article, offers, analysis) {
   const label = CATEGORY_LABEL[article.category] || article.category;
   const site = config.whatsappNewsSiteUrl;
-  const summary = (article.summary || "").trim().slice(0, 280);
+  const reviewed = (analysis || article.summary || "").trim().slice(0, 500);
   const lines = [
     `📰 Notice · ${label}`,
     "",
     article.title,
   ];
-  if (summary) {
-    lines.push("", summary);
+  if (reviewed) {
+    lines.push("", reviewed);
   }
   lines.push("", `🔗 ${site}/articles/${article.id}`);
 
@@ -161,6 +171,9 @@ export async function registerGroupFromWhatsApp({
 }
 
 export async function enqueueRankedOffersForGroups() {
+  if (!(await whatsappReadyToPublish())) {
+    return { groups: 0, enqueued: 0, reason: "whatsapp_disconnected" };
+  }
   await refreshOfferRankScores();
   const groups = (await listOfferGroups({ activeOnly: true })).filter(
     (group) => !isNewsGroup(group)
@@ -235,20 +248,18 @@ async function pickFreshOffers({ groupId, keyword, limit }) {
   return picked;
 }
 
-export async function enqueueNewsWithOffers() {
+async function newsDispatchGroups() {
   const jid = (config.whatsappNewsGroupJid || "").trim();
-  if (!jid) {
-    return { enqueued: 0, reason: "missing_news_group" };
+  if (jid) {
+    const newsGroup = await getOfferGroupByJid(jid);
+    if (newsGroup?.active) return [newsGroup];
   }
+  return listOfferGroups({ activeOnly: true });
+}
 
-  const group = await getOfferGroupByJid(jid);
-  if (!group || !group.active) {
-    return { enqueued: 0, reason: "news_group_not_registered" };
-  }
-
-  const article = await findRandomArticle({ maxAgeDays: 7 });
-  if (!article) {
-    return { enqueued: 0, reason: "no_articles" };
+async function enqueueArticleNews(group, article, analysis) {
+  if (await wasArticleQueued(group.id, article.id)) {
+    return null;
   }
 
   const keyword = CATEGORY_OFFER_KEYWORDS[article.category] || "oferta";
@@ -258,24 +269,87 @@ export async function enqueueNewsWithOffers() {
     limit: config.whatsappNewsOffers,
   });
 
-  await enqueueWhatsAppPost({
+  const messageText = buildNewsMessage(article, offers, analysis);
+  const queued = await enqueueWhatsAppPost({
     groupId: group.id,
     offerId: null,
+    articleId: article.id,
     rankPosition: null,
     rankScore: null,
-    messageText: buildNewsMessage(article, offers),
+    messageText,
     imageUrl: offers[0]?.imageUrl || null,
   });
+  if (!queued) return null;
+
+  try {
+    const telegram = await mirrorNewsToTelegram(messageText);
+    if (telegram.failed) {
+      console.warn("[telegram] Espelho notícia falhou:", JSON.stringify(telegram));
+    }
+  } catch (error) {
+    console.warn("[telegram] Espelho notícia:", error.message);
+  }
+
   await reserveOffersCooldown(
     group.id,
     offers.map((offer) => offer.id)
   );
+  return { articleId: article.id, group: group.name, offers: offers.length };
+}
+
+async function pickThemeAnalysis(groupId) {
+  const startTheme = pickNewsTheme();
+  const themes = config.whatsappNewsThemes.length
+    ? config.whatsappNewsThemes
+    : [startTheme];
+  const startIndex = Math.max(themes.indexOf(startTheme), 0);
+
+  for (let offset = 0; offset < themes.length; offset += 1) {
+    const theme = themes[(startIndex + offset) % themes.length];
+    const picked = await analyzeMostRelevantNews({ groupId, theme });
+    if (picked.article) return picked;
+  }
+  return { theme: startTheme, article: null, analysis: null, reason: "no_candidates" };
+}
+
+export async function enqueueNewsWithOffers() {
+  if (!(await whatsappReadyToPublish())) {
+    return { enqueued: 0, reason: "whatsapp_disconnected" };
+  }
+
+  const groups = await newsDispatchGroups();
+  if (groups.length === 0) {
+    return { enqueued: 0, reason: "no_active_group" };
+  }
+
+  let enqueued = 0;
+  const articles = [];
+  let analysis = null;
+
+  for (const group of groups) {
+    const picked = await pickThemeAnalysis(group.id);
+    analysis = {
+      theme: picked.theme,
+      themeLabel: newsThemeLabel(picked.theme),
+      model: picked.model || null,
+      candidates: picked.candidates || 0,
+      reason: picked.reason || null,
+    };
+    if (!picked.article) continue;
+
+    const item = await enqueueArticleNews(group, picked.article, picked.analysis);
+    if (item) {
+      enqueued += 1;
+      articles.push(item.articleId);
+    }
+    break;
+  }
 
   return {
-    enqueued: 1,
-    articleId: article.id,
-    offers: offers.length,
-    group: group.name,
+    enqueued,
+    articles,
+    analysis,
+    groups: groups.map((group) => group.name),
   };
 }
 
@@ -349,4 +423,9 @@ export async function publishNewsNow() {
   return { ...queued, ...drained };
 }
 
-export { getOfferGroupById, getWhatsAppQueueStats, listWhatsAppGroups };
+export {
+  discardUnsentWhatsAppPosts,
+  getOfferGroupById,
+  getWhatsAppQueueStats,
+  listWhatsAppGroups,
+};

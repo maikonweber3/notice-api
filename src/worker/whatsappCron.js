@@ -13,7 +13,7 @@ async function runOffers() {
 
 async function runNews() {
   const result = await enqueueNewsWithOffers();
-  console.log(`[WHATSAPP CRON] Notícias 1h: ${JSON.stringify(result)}`);
+  console.log(`[WHATSAPP CRON] Notícias 3h: ${JSON.stringify(result)}`);
 }
 
 async function start() {

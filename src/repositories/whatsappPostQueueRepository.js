@@ -3,6 +3,7 @@ import { pool } from "../db/pool.js";
 export async function enqueueWhatsAppPost({
   groupId,
   offerId,
+  articleId,
   rankPosition,
   rankScore,
   messageText,
@@ -11,13 +12,15 @@ export async function enqueueWhatsAppPost({
   const result = await pool.query(
     `
     INSERT INTO whatsapp_post_queue (
-      group_id, offer_id, rank_position, rank_score, message_text, image_url
+      group_id, offer_id, article_id, rank_position, rank_score, message_text, image_url
     )
-    VALUES ($1, $2, $3, $4, $5, $6)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    ON CONFLICT (group_id, article_id) WHERE article_id IS NOT NULL DO NOTHING
     RETURNING
       id,
       group_id AS "groupId",
       offer_id AS "offerId",
+      article_id AS "articleId",
       rank_position AS "rankPosition",
       rank_score AS "rankScore",
       message_text AS "messageText",
@@ -25,9 +28,33 @@ export async function enqueueWhatsAppPost({
       status,
       created_at AS "createdAt"
   `,
-    [groupId, offerId, rankPosition, rankScore, messageText, imageUrl || null]
+    [
+      groupId,
+      offerId || null,
+      articleId || null,
+      rankPosition,
+      rankScore,
+      messageText,
+      imageUrl || null,
+    ]
   );
-  return result.rows[0];
+  return result.rows[0] || null;
+}
+
+export async function wasArticleQueued(groupId, articleId) {
+  if (!articleId) return false;
+  const result = await pool.query(
+    `
+    SELECT 1
+    FROM whatsapp_post_queue
+    WHERE group_id = $1
+      AND article_id = $2
+      AND status IN ('pending', 'processing', 'posted')
+    LIMIT 1
+  `,
+    [groupId, articleId]
+  );
+  return result.rowCount > 0;
 }
 
 export async function wasOfferPostedRecently(groupId, offerId, cooldownHours) {
@@ -159,6 +186,15 @@ export async function resetStuckWhatsAppPosts(maxAgeMinutes = 15) {
   `,
     [maxAgeMinutes]
   );
+  return result.rowCount;
+}
+
+export async function discardUnsentWhatsAppPosts() {
+  const result = await pool.query(`
+    DELETE FROM whatsapp_post_queue
+    WHERE status IN ('pending', 'processing', 'failed')
+      AND message_text <> '[cooldown]'
+  `);
   return result.rowCount;
 }
 

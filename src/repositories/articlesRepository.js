@@ -6,7 +6,8 @@ function sanitizeArticle(row) {
   return {
     ...row,
     summary: toPlainTextOrNull(row.summary, { maxLength: 500 }),
-    body: row.body ? toPlainTextOrNull(row.body) : null,
+    body: null,
+    bodyGeneratedAt: null,
   };
 }
 
@@ -189,6 +190,83 @@ export async function pruneArticles({ maxPerCategory = 0, maxAgeDays = 0 } = {})
     deletedByAge,
     deletedByCount,
   };
+}
+
+export async function findRecentArticlesForTheme({
+  category,
+  groupId,
+  limit = 12,
+  maxAgeHours = 36,
+} = {}) {
+  const result = await pool.query(
+    `
+    SELECT
+      a.id,
+      a.source_type AS "sourceType",
+      a.source_name AS "sourceName",
+      a.source_url AS "sourceUrl",
+      a.category,
+      a.title,
+      a.url,
+      a.summary,
+      a.body,
+      a.body_generated_at AS "bodyGeneratedAt",
+      a.published_at AS "publishedAt",
+      a.collected_at AS "collectedAt"
+    FROM articles a
+    WHERE a.category = $1
+      AND COALESCE(a.published_at, a.collected_at)
+        >= NOW() - ($3::text || ' hours')::interval
+      AND NOT EXISTS (
+        SELECT 1
+        FROM whatsapp_post_queue q
+        WHERE q.article_id = a.id
+          AND q.group_id = $2
+          AND q.status IN ('pending', 'processing', 'posted')
+      )
+    ORDER BY
+      (a.body IS NOT NULL) DESC,
+      COALESCE(a.published_at, a.collected_at) DESC,
+      a.id DESC
+    LIMIT $4
+  `,
+    [category, groupId, maxAgeHours, limit]
+  );
+  return result.rows.map(sanitizeArticle);
+}
+
+export async function findEnrichedArticlesNotQueued({ groupId, limit = 3 } = {}) {
+  const result = await pool.query(
+    `
+    SELECT
+      a.id,
+      a.source_type AS "sourceType",
+      a.source_name AS "sourceName",
+      a.source_url AS "sourceUrl",
+      a.category,
+      a.title,
+      a.url,
+      a.summary,
+      a.body,
+      a.body_generated_at AS "bodyGeneratedAt",
+      a.published_at AS "publishedAt",
+      a.collected_at AS "collectedAt"
+    FROM articles a
+    WHERE a.body IS NOT NULL
+      AND a.body_generated_at IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1
+        FROM whatsapp_post_queue q
+        WHERE q.article_id = a.id
+          AND q.group_id = $1
+          AND q.status IN ('pending', 'processing', 'posted')
+      )
+    ORDER BY a.body_generated_at DESC, a.id DESC
+    LIMIT $2
+  `,
+    [groupId, limit]
+  );
+  return result.rows.map(sanitizeArticle);
 }
 
 export async function findRandomArticle({ maxAgeDays = 7 } = {}) {

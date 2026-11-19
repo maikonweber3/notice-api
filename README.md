@@ -67,6 +67,8 @@ Endpoints principais:
 - `GET /articles?category=cinema&page=1&limit=20`
 - `GET /articles/:id`
 - `GET /stats`
+- `GET /jev` (status do proxy Jev)
+- `POST /jev/decisions` (decisões estruturadas Jev via OpenRouter; requer `JEV_API_TOKEN`)
 - `POST /ingestion/run` (coleta manual; ao final executa limpeza de retencao)
 - `POST /cleanup/run` (limpeza manual sem nova coleta)
 
@@ -80,6 +82,43 @@ curl -X POST http://localhost:3000/ingestion/run \
 ```
 
 Alternativa sem `Authorization`: header `X-Runner-Token: notice-runner-dev-token`.
+
+## Jev (OpenRouter Decisions)
+
+O Jev não é um modelo de chat: ele responde perguntas tipadas sobre um `state` (string, objeto ou array) e devolve probabilidades calibradas.
+
+Tipos:
+- `noul`: sim/não (probabilidade 0–1)
+- `choice`: escolhe uma opção nomeada
+- `score`: posição numa rubrica ordenada
+
+Token de uso: `JEV_API_TOKEN` (defina no .env). Header `Authorization: Bearer …` ou `X-Jev-Token`.
+
+```bash
+curl -X POST http://localhost:3002/jev/decisions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $JEV_API_TOKEN" \
+  -d '{
+    "state": "Help! Meus pagamentos falham há 3 dias.",
+    "questions": {
+      "is_urgent": {
+        "type": "noul",
+        "instructions": "A mensagem transmite urgência?",
+        "true": "Explicitamente urgente",
+        "false": "Sem urgência"
+      },
+      "team": {
+        "type": "choice",
+        "instructions": "Qual time deve atender?",
+        "billing": "Pagamentos, faturas, reembolsos",
+        "technical": "Bugs, instabilidade, integrações",
+        "sales": "Preço, upgrade, contas novas"
+      }
+    }
+  }'
+```
+
+Variáveis: `JEV_API_TOKEN`, `JEV_MODEL` (padrão `~typesafe/jev-latest`) e `JEV_TIMEOUT_MS` (padrão `60000`). Usa a mesma `OPENROUTER_API_KEY`.
 
 ## Worker Cron
 
@@ -129,6 +168,21 @@ curl -X POST http://localhost:3000/cleanup/run
 ```
 
 `GET /stats` retorna `total`, contagens por categoria e os limites configurados em `retention`.
+
+## Bitcoin diario + Telegram (News MutterCorp)
+
+O notice-api orquestra a analise de BTC do `app-python-signals/crypto-analytic` e publica no Telegram.
+
+1. Suba o FastAPI (PM2 `crypto-analytic` na porta `8765`, ou `uvicorn app:app --host 127.0.0.1 --port 8765` na pasta `crypto-analytic`).
+2. No `.env` do notice-api (mesmo bot do signals):
+   - `TELEGRAM_BOT_TOKEN`
+   - `TELEGRAM_CHAT_IDS=@btcusdtprevisao` (mesmo destino do relatório horário de performance da VPS)
+   - `TELEGRAM_NEWS_CHAT_ID=@btcusdtprevisao` (se vazio, reutiliza o chat de observabilidade)
+3. `npm run db:migrate` cria a tabela `bitcoin_analyses`.
+4. Worker: `npm run worker:bitcoin` (08:00 `America/Sao_Paulo`) ou PM2 `notice-bitcoin-worker`.
+5. Manual: `POST /bitcoin/run` (mesmo `RUNNER_TOKEN`). Leitura: `GET /bitcoin/latest`.
+
+Notícias enfileiradas para WhatsApp também são espelhadas nesse mesmo chat Telegram.
 
 ## Integracao facilitada
 

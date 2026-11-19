@@ -184,7 +184,7 @@ export async function registerWhatsAppRoutes(app) {
     schema: {
       hide: true,
       tags: ["WhatsApp"],
-      description: "Publica uma notícia aleatória + ofertas no grupo MutterCorp",
+      description: "Publica 1 notícia do tema da rodada, escolhida por IA entre as mais relevantes",
     },
   }, async () => publishNewsNow());
 

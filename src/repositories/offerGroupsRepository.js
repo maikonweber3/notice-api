@@ -63,7 +63,7 @@ export async function upsertOfferGroup({
   whatsappJid,
   inviteLink,
   active = true,
-  postsPerRun = 3,
+  postsPerRun = 2,
   minRankScore = 0,
 }) {
   const result = await pool.query(

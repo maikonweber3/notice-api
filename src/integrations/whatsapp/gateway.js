@@ -168,6 +168,9 @@ export async function startSession() {
           console.error(
             `[whatsapp] Sessão encerrada (code ${statusCode}). ${replaced ? "Substituída por outro aparelho." : "Logout."}`
           );
+          if (loggedOut) {
+            await rm(sessionDir(), { recursive: true, force: true }).catch(() => {});
+          }
           return;
         }
 

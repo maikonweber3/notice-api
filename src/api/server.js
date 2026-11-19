@@ -17,8 +17,22 @@ await app.register(swagger, {
     info: {
       title: "Notice API",
       description:
-        "API pública de notícias, catálogo Shopee Affiliate, ranking de ofertas e grupos de WhatsApp. Rotas internas (X, WhatsApp session, ingestão) não são documentadas aqui.",
-      version: "1.2.0",
+        "API pública de notícias, catálogo Shopee Affiliate, ranking de ofertas, grupos de WhatsApp e decisões Jev (OpenRouter). Rotas internas (X, WhatsApp session, ingestão) não são documentadas aqui.",
+      version: "1.3.0",
+    },
+    components: {
+      securitySchemes: {
+        runnerToken: {
+          type: "http",
+          scheme: "bearer",
+          description: "RUNNER_TOKEN — Authorization: Bearer … ou header X-Runner-Token",
+        },
+        jevToken: {
+          type: "http",
+          scheme: "bearer",
+          description: "JEV_API_TOKEN — Authorization: Bearer … ou header X-Jev-Token",
+        },
+      },
     },
   },
 });
