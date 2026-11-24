@@ -1,14 +1,15 @@
 import { pool } from "../db/pool.js";
 import { toPlainTextOrNull } from "../utils/plainText.js";
+import { annotateAnimeFlags, ONE_PIECE_REGEX, SPOILER_REGEX } from "../utils/animeTopics.js";
 
 function sanitizeArticle(row) {
   if (!row) return row;
-  return {
+  return annotateAnimeFlags({
     ...row,
     summary: toPlainTextOrNull(row.summary, { maxLength: 500 }),
     body: null,
     bodyGeneratedAt: null,
-  };
+  });
 }
 
 export async function insertArticles(articles) {
@@ -27,7 +28,13 @@ export async function insertArticles(articles) {
           source_id, source_type, source_name, source_url, category, title, url, summary,
           published_at, collected_at, content_hash
         )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+        SELECT $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11
+        WHERE NOT EXISTS (
+          SELECT 1 FROM articles existing
+          WHERE $7::text IS NOT NULL
+            AND existing.url = $7
+            AND existing.category = $5
+        )
         ON CONFLICT (content_hash) DO NOTHING
       `,
         [
@@ -83,6 +90,16 @@ export async function findArticles(filters) {
   if (filters.q) {
     params.push(`%${filters.q}%`);
     clauses.push(`title ILIKE $${params.length}`);
+  }
+  if (filters.onePiece) {
+    params.push(ONE_PIECE_REGEX);
+    clauses.push(
+      `(source_name ILIKE '%one piece%' OR source_name ILIKE '%one-piece%' OR title ~* $${params.length} OR COALESCE(summary, '') ~* $${params.length})`,
+    );
+  }
+  if (filters.spoiler) {
+    params.push(SPOILER_REGEX);
+    clauses.push(`(title ~* $${params.length} OR COALESCE(summary, '') ~* $${params.length})`);
   }
 
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";

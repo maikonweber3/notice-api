@@ -115,6 +115,9 @@ export async function registerRoutes(app) {
           q: { type: "string" },
           from: { type: "string", format: "date-time" },
           to: { type: "string", format: "date-time" },
+          topic: { type: "string" },
+          onePiece: { type: "boolean" },
+          spoiler: { type: "boolean" },
           page: { type: "number", minimum: 1 },
           limit: { type: "number", minimum: 1, maximum: 100 },
         },
@@ -122,6 +125,16 @@ export async function registerRoutes(app) {
     },
   }, async (request) => {
     const { page, limit, offset } = parsePagination(request.query);
+    const topic = String(request.query.topic || "").toLowerCase();
+    const onePiece =
+      request.query.onePiece === true ||
+      request.query.onePiece === "true" ||
+      request.query.onePiece === "1" ||
+      topic === "one-piece";
+    const spoiler =
+      request.query.spoiler === true ||
+      request.query.spoiler === "true" ||
+      request.query.spoiler === "1";
     const { items, total } = await findArticles({
       category: request.query.category,
       sourceName: request.query.sourceName,
@@ -129,6 +142,8 @@ export async function registerRoutes(app) {
       q: request.query.q,
       from: request.query.from,
       to: request.query.to,
+      onePiece,
+      spoiler,
       limit,
       offset,
     });
